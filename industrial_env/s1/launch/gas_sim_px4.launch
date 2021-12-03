@@ -1,0 +1,100 @@
+<!--
+################################################################
+#                                                              #
+#		ROS simulation for Mobile Robot Olfaction      #
+#                           				       #
+################################################################
+-->
+
+<launch>
+    <arg name="scenario" default="industrial_env/s1" />
+    <arg name="simulation" default="1ms" />
+    <arg name="source_location_x" default="170.00" />
+    <arg name="source_location_y" default="90.00" />
+    <arg name="source_location_z" default="2.00" />
+    <arg name="source_type" default="6" />
+
+
+        ### ROBOT SIMULATION ###
+    <param name="use_sim_time" value="true" />
+
+    ### RVIZ ###
+    <node name="rviz_player" pkg="rviz" type="rviz" args="-d ~/GADEN/$(arg scenario)/launch/ros/gaden_dstl.rviz"/>
+  
+# ===================== GADEN =====================================
+
+     ### NODE environment (for RVIZ visualization) ###
+    <node pkg="gaden_environment" type="environment" name="environment" output="screen">
+        <param name="verbose" value="false"/>
+        <param name="wait_preprocessing" value="false"/>    	  ### wait for the ok from gaden_preprocessing before running
+        <param name="fixed_frame" value="map"/>
+
+    # Plot CAD models (Collada format .dae)
+	    <param name="number_of_CAD" value="2"/>
+	    <rosparam subst_value="True">
+            CAD_0: package://test_env/$(arg scenario)/cad_models/env_ass.dae
+            CAD_0_color: [0.92, 0.96, 0.96]
+
+        </rosparam>
+	            
+ 	# Plot 3D OccupancyGridmap
+        #<param name="occupancy3D_data" value="~/GADEN/$(arg scenario)/OccupancyGrid3D.csv" />
+
+        # Plot gas sources
+        <param name="number_of_sources" value="1"/>
+        <param name="source_0_position_x" value="$(arg source_location_x)"/>
+        <param name="source_0_position_y" value="$(arg source_location_y)"/>
+        <param name="source_0_position_z" value="$(arg source_location_z)"/>
+        <rosparam>
+            source_0_scale: 0.2
+            source_0_color: [0.0, 1.0, 0.0] 
+        </rosparam>
+    </node>
+          
+    
+    ### NODE PLAYER ###
+    #-------------------
+    <node pkg="gaden_player" type="gaden_player" name="gaden_player" output="screen">
+        <param name="verbose" value="false" />
+	    <param name="player_freq" value="2" />         ###(Hz) Freq for loading the simulation log_files
+	    <param name="initial_iteration" value="0" />
+	    <param name="num_simulators" value="1" />      ### Number of simulations to load [1-inf] (useful for multiple sources and gases)
+    
+        # Data from the "filament_simulator" pkg. Multiple sources can be set here
+        <param name="simulation_data_0" value="/home/fatman/DSTL_sim/GADEN/$(arg scenario)/gas_simulations/$(arg simulation)/FilamentSimulation_gasType_$(arg source_type)_sourcePosition_$(arg source_location_x)_$(arg source_location_y)_$(arg source_location_z)" />
+        
+        # Loop options        
+        <param name="allow_looping" value="true" />
+        <param name="loop_from_iteration" value="300" />
+        <param name="loop_to_iteration" value="600" />
+        
+    </node>
+  
+  
+  ### SENSOR SIMULATION ###
+  #-----------------------#
+  # SENSOR MODELS: 
+  # MOX: TGS2620=0, TGS2600=1, TGS2611=2
+  # PID: MiniRaeLite=30
+  # Sensors are simulated onboad the robot
+  
+  <group ns="PID">
+    <node pkg="simulated_gas_sensor" type="simulated_gas_sensor" name="fake_pid" output="screen">
+        <param name="/sensor_model" value="30" />
+        <param name="/sensor_frame" value="pid_frame" />
+        <param name="/fixed_frame" value="map"/>
+        <param name="/noise_std" value="20.1"/>
+    </node>
+  </group>
+  <node pkg="tf" type="static_transform_publisher" name="pid_broadcaster" args="0.0 0.0 0.2 0 0 0 base_link pid_frame 100" />  
+
+  <group ns="Anemometer">
+    <node pkg="simulated_anemometer" type="simulated_anemometer" name="fake_anemometer" output="screen">	        
+      <param name="/sensor_frame" value="anemometer_frame" />
+      <param name="/fixed_frame" value="map"/>
+      <param name="/noise_std" value="0.3"/>
+      <param name="/use_map_ref_system" value="false"/>
+    </node>
+  </group>
+  <node pkg="tf" type="static_transform_publisher" name="anemometer_broadcaster" args="0.0 0.0 0.2 0 0 0 base_link anemometer_frame 100" />
+</launch>

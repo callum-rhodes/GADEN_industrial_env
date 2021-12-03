@@ -1,0 +1,35 @@
+<!-- Mission file for GADEN preprocessing
+    ROS - KINETIC
+-->
+
+<launch>
+    <arg name="scenario" default="industrial_env/s2" />
+    
+    <node pkg="gaden_preprocessing" type="preprocessing" name="preprocessing" output="screen" >
+
+        #Cell size
+        <param name="cell_size" value="1.2"/>    
+        
+        #CAD models of the enviroment (.stl)
+        <param name="number_of_models" value="2"/>
+        <param name="model_0" value="~/GADEN/$(arg scenario)/cad_models/walls.stl"/>
+        <param name="model_1" value="~/GADEN/$(arg scenario)/cad_models/env_ass.stl"/>
+                
+        #CAD model of the outlets (.stl)
+        <param name="number_of_outlet_models" value="1"/>
+        <param name="outlets_model_0" value="~/GADEN/$(arg scenario)/cad_models/outlet_walls.stl"/>
+        
+        #3D Location of a point in free-space
+        <param name="empty_point_x" value="3.0"/>      ### (m)
+        <param name="empty_point_y" value="3.0"/>      ### (m)
+        <param name="empty_point_z" value="1.0"/>      ### (m)
+            
+
+        #Wind Data (the node will append _i.csv to the name that is specified here)
+        <param name="wind_files" value="~/GADEN/$(arg scenario)/wind_simulations/1ms/cell_centers"/>
+
+        #Where to write the output files
+        <param name="output_path" value="~/GADEN/$(arg scenario)" />
+    </node>
+</launch>
+
